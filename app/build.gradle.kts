@@ -93,6 +93,9 @@ android {
             vcsInfo.include = false
         }
         debug {
+            // Local side-by-side build: installs next to the store-signed Haven.
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
             // Sign debug with the release cert when the keystore env is present
             // (source ~/.haven-release.env), so a debuggable build installs over
             // a release-signed device build without a data-wiping uninstall.
