@@ -157,8 +157,9 @@ class VncClient(private val config: VncConfig) : Closeable {
         // faster than this drop chars against QEMU's VNC.
         keyboardLock.lock()
         try {
-            for (ch in text) {
-                val (keySym, needsShift) = charToKeyEvent(ch)
+            val codePoints = text.codePoints().toArray()
+            for (cp in codePoints) {
+                val (keySym, needsShift) = codePointToKeyEvent(cp)
                 if (needsShift) {
                     session?.sendKeyEvent(SHIFT_L, true)
                     if (sleep(10)) return
@@ -194,6 +195,9 @@ class VncClient(private val config: VncConfig) : Closeable {
      * whether to wrap with Shift_L events. QEMU's keymap relies on both
      * being correct — see [typeText].
      */
+    private fun codePointToKeyEvent(cp: Int): Pair<Int, Boolean> =
+        if (cp > 0xFFFF) unicodeToKeySym(cp) to false else charToKeyEvent(cp.toChar())
+
     private fun charToKeyEvent(ch: Char): Pair<Int, Boolean> = when (ch) {
         '\n', '\r' -> RETURN to false
         '\t'       -> TAB to false
@@ -207,9 +211,10 @@ class VncClient(private val config: VncConfig) : Closeable {
         // Shifted US-layout symbols
         '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
         '_', '+', '{', '}', '|', ':', '"', '<', '>', '?', '~' -> ch.code to true
-        // Latin-1 / Unicode pass-through, no shift. Won't render
-        // correctly on non-US server keymaps; needs per-layout work.
-        else -> ch.code to false
+        // Latin-1 maps directly; everything else (CJK, Cyrillic, emoji…)
+        // uses the X11 Unicode keysym range 0x01000000 + code point.
+        // Won't render correctly on non-US server keymaps; needs per-layout work.
+        else -> unicodeToKeySym(ch.code) to false
     }
 
     private companion object {

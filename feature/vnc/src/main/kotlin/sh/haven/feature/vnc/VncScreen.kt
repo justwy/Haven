@@ -2346,7 +2346,7 @@ fun charToKeySym(ch: Char): Int = when (ch) {
     '\n', '\r' -> XK_RETURN
     '\t' -> XK_TAB
     '\b' -> XK_BACKSPACE
-    else -> ch.code // Latin-1 characters map directly to Unicode code point
+    else -> sh.haven.core.vnc.unicodeToKeySym(ch.code)
 }
 
 /** Map Android Key to X11 KeySym for special (non-printable) keys. */
